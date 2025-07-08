@@ -174,20 +174,25 @@ export const loginUser = async (req, res) => {
       expiresIn: "30d",
     });
 
+    // Ini penting agar cookie bisa diakses oleh subdomain lain (misal: Vercel jika custom domain)
+    const cookieDomain = process.env.NODE_ENV === "production" 
+                         ? ".up.railway.app" // Ganti dengan domain dasar Railway Anda
+                         : "localhost"; // Untuk development lokal
+
+    
     // Simpan token di cookie
     res.cookie("jwt", token, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production", // Asli: hanya secure di produksi
-      secure: false, // UBAH INI: Set ke false untuk development lokal (HTTP)
-      // sameSite: "none", // Asli: none (membutuhkan secure: true)
-      sameSite: "Lax", // UBAH INI: Set ke 'Lax' atau 'Strict' untuk development lokal
+      secure: process.env.NODE_ENV === "production" || false, // true untuk HTTPS di produksi, false untuk HTTP lokal
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "None" untuk lintas situs di produksi (membutuhkan secure: true), "Lax" untuk lokal
+      domain: cookieDomain, // Tambahkan properti domain ini
       maxAge: 1000 * 60 * 60 * 24 * 5, // 5 days
     });
 
     res.status(200).json({
       success: true,
       message: "Login berhasil",
-      token,
+      token, // Tetap kirim token di body
     });
   } catch (error) {
     res
